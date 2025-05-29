@@ -5,6 +5,14 @@ pub fn main() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
+    std.posix.sigaction(std.posix.SIG.INT, &std.posix.Sigaction{
+        .handler = .{
+            .handler = std.posix.SIG.IGN,
+        },
+        .mask = std.posix.empty_sigset,
+        .flags = 0,
+    }, null);
+
     const stdout = std.io.getStdOut();
 
     var fbs = std.io.fixedBufferStream(@embedFile("frames.dat.xz"));
@@ -16,10 +24,11 @@ pub fn main() !void {
         try frames.append(buf);
     }
 
-    var child = std.process.Child.init(&.{ "aplay", "./never-gonna-give-you-up.wav" }, allocator);
-    child.stdout_behavior = .Ignore;
-    child.stderr_behavior = .Ignore;
-    try child.spawn();
+    const pid = try std.posix.fork();
+    if (pid == 0) {
+        _ = std.os.linux.setsid();
+        return std.process.execv(allocator, &.{ "aplay", "./never-gonna-give-you-up.wav" });
+    }
 
     for (frames.items) |frame| {
         try stdout.writeAll("\u{001B}[H");
