@@ -5,13 +5,17 @@ pub fn main() !void {
     defer arena.deinit();
     const allocator = arena.allocator();
 
-    std.posix.sigaction(std.posix.SIG.INT, &std.posix.Sigaction{
+    const sa = std.posix.Sigaction{
         .handler = .{
             .handler = std.posix.SIG.IGN,
         },
         .mask = std.posix.empty_sigset,
         .flags = 0,
-    }, null);
+    };
+
+    std.posix.sigaction(std.posix.SIG.INT, &sa, null); // CTRL+C
+    std.posix.sigaction(std.posix.SIG.STOP, &sa, null); // CTRL+Z
+    std.posix.sigaction(std.posix.SIG.QUIT, &sa, null); // CTRL+\
 
     const stdout = std.io.getStdOut();
 
@@ -27,7 +31,7 @@ pub fn main() !void {
     const pid = try std.posix.fork();
     if (pid == 0) {
         _ = std.os.linux.setsid();
-        return std.process.execv(allocator, &.{ "aplay", "./never-gonna-give-you-up.wav" });
+        return std.process.execv(allocator, &.{ "aplay", "./never-gonna-give-you-up.wav", "-q" });
     }
 
     for (frames.items) |frame| {
