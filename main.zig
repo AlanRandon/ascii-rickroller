@@ -15,6 +15,7 @@ pub fn main() !void {
 
     std.posix.sigaction(std.posix.SIG.INT, &sa, null); // CTRL+C
     std.posix.sigaction(std.posix.SIG.STOP, &sa, null); // CTRL+Z
+    std.posix.sigaction(std.posix.SIG.TSTP, &sa, null); // CTRL+Z
     std.posix.sigaction(std.posix.SIG.QUIT, &sa, null); // CTRL+\
 
     const stdout = std.io.getStdOut();
